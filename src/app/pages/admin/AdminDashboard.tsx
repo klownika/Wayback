@@ -2,7 +2,7 @@ import { Package, Users, ShoppingBag, Tag, TrendingUp, Clock } from 'lucide-reac
 
 const STATS = [
   { label: 'Productos', value: '—', sub: 'Pendiente de API', icon: Package,     color: '#7c3aed', bg: 'rgba(124,58,237,0.08)' },
-  { label: 'Usuarios',  value: '—', sub: 'Pendiente de API', icon: Users,       color: '#0ea5e9', bg: 'rgba(14,165,233,0.08)' },
+  { label: 'Clientes',  value: '—', sub: 'Pendiente de API', icon: Users,       color: '#0ea5e9', bg: 'rgba(14,165,233,0.08)' },
   { label: 'Pedidos',   value: '—', sub: 'Pendiente de API', icon: ShoppingBag, color: '#10b981', bg: 'rgba(16,185,129,0.08)' },
   { label: 'Categorías',value: '11', sub: 'Categorías activas', icon: Tag,       color: '#f59e0b', bg: 'rgba(245,158,11,0.08)' },
 ];
