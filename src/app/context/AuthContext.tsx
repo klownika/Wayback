@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { loginApi } from '@/lib/api'; // Usamos el alias de tu configuración de Vite
+// 🛠️ Importamos el método de la API de registro junto con su interfaz de datos
+import { loginApi, registerClienteApi, type RegisterData } from '@/lib/api'; 
 
 export type Role = 'client' | 'admin';
 
@@ -14,8 +15,9 @@ interface AuthContextType {
   user: AuthUser | null;
   token: string | null;
   isAdmin: boolean;
-  // 🛠️ Cambiado a función asíncrona para soportar HTTP requests
   login: (email: string, password: string) => Promise<{ success: boolean; role?: Role; error?: string }>;
+  // 🛠️ Agregada la firma del método de registro al tipo del contexto
+  register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>; 
   logout: () => void;
 }
 
@@ -50,41 +52,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAdmin = user?.role === 'admin';
 
-  // 🛠️ Transformación a método Async para consultar al Backend real
-  // src/app/context/AuthContext.tsx (Dentro de AuthProvider)
+  // ── MÉTODO DE INICIO DE SESIÓN (LOGIN) ──
+  const login = async (email: string, password: string): Promise<{ success: boolean; role?: Role; error?: string }> => {
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPass  = password.trim();
 
-const login = async (email: string, password: string): Promise<{ success: boolean; role?: Role; error?: string }> => {
-  const trimmedEmail = email.trim().toLowerCase();
-  const trimmedPass  = password.trim();
+    if (!trimmedEmail || !trimmedPass) {
+      return { success: false, error: 'Ingresa tu email y contraseña.' };
+    }
 
-  if (!trimmedEmail || !trimmedPass) {
-    return { success: false, error: 'Ingresa tu email y contraseña.' };
-  }
+    const result = await loginApi(trimmedEmail, trimmedPass);
 
-  const result = await loginApi(trimmedEmail, trimmedPass);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
 
-  if (!result.success) {
-    return { success: false, error: result.error };
-  }
+    const apiUser = result.user; 
+    const role: Role = apiUser?.rol === 'admin' ? 'admin' : 'client';
 
-  const apiUser = result.user; // Este es el JSON de tu captura
-  
-  // 🛠️ Mapeamos "rol" e "usuario" de forma exacta a tu estado de React
-  const role: Role = apiUser?.rol === 'admin' ? 'admin' : 'client';
+    const loggedUser: AuthUser = {
+      id: Number(apiUser?.id ?? 0),
+      name: String(apiUser?.usuario ?? trimmedEmail.split('@')[0]), 
+      email: trimmedEmail,
+      role,
+    };
 
-  const loggedUser: AuthUser = {
-    id: Number(apiUser?.id ?? 0),
-    name: String(apiUser?.usuario ?? trimmedEmail.split('@')[0]), // Extrae "admin123"
-    email: trimmedEmail,
-    role,
+    setToken(result.token ?? 'session-active');
+    setUser(loggedUser);
+
+    return { success: true, role };
   };
 
-  setToken(result.token ?? 'session-active');
-  setUser(loggedUser);
+  // ── 🛠️ NUEVO MÉTODO DE REGISTRO CON AUTO-LOGIN ASÍNCRONO ──
+  const register = async (data: RegisterData): Promise<{ success: boolean; error?: string }> => {
+    // 1. Enviamos la petición POST serializada al backend en Render
+    const result = await registerClienteApi(data);
 
-  // Retorna el rol real para que LoginModal.tsx ejecute el navigate correspondiente
-  return { success: true, role };
-};
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    // 2. ⚡ AUTO-LOGIN: Si el backend guardó el registro con éxito,
+    // disparamos automáticamente el login con sus credenciales para saltar directo a la sesión activa.
+    const loginResult = await login(data.Email, data.Contrasena);
+
+    if (!loginResult.success) {
+      return { success: false, error: 'Cuenta creada con éxito, pero falló el inicio de sesión automático.' };
+    }
+
+    return { success: true };
+  };
 
   const logout = () => {
     setUser(null);
@@ -92,7 +109,8 @@ const login = async (email: string, password: string): Promise<{ success: boolea
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isAdmin, login, logout }}>
+    // 🛠️ Incluimos el nuevo método 'register' dentro del proveedor de contexto global
+    <AuthContext.Provider value={{ user, token, isAdmin, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -7,6 +7,7 @@ import { UserProfilePage } from './pages/UserProfilePage';
 import { FavoritesPage } from './pages/FavoritesPage';
 import { CartPage } from './pages/CartPage';
 import { SearchPage } from './pages/SearchPage';
+import { RegisterPage } from './pages/RegisterPage'; // ✨ 1. IMPORTA LA PÁGINA DE REGISTRO
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminProducts } from './pages/admin/AdminProducts';
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
       { path: 'favoritos', Component: FavoritesPage },
       { path: 'carrito', Component: CartPage },
       { path: 'buscar',  Component: SearchPage },
+      { path: 'registrar', Component: RegisterPage }, // ✨ 2. CONECTA LA RUTA PÚBLICA AQUÍ
     ],
   },
   {

@@ -47,6 +47,37 @@ export interface Product {
   inStock: boolean;
 }
 
+// Interfaces para el tipado estricto del registro .NET
+export interface RegisterData {
+  Email: string;
+  NombreUsuario: string;
+  Contrasena: string;
+  Nombres: string;
+  Apellidos: string;
+  TipoDocumento: string;
+  Documento: string;
+}
+
+// ── MÉTODO POST: REGISTRAR CLIENTE NUEVO ──
+export async function registerClienteApi(data: RegisterData): Promise<{ success: boolean; error?: string }> {
+  const url = `${API_BASE}/api/auth/register-cliente`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data), // Se envían las propiedades en PascalCase
+    });
+
+    const result = await res.json();
+    if (!res.ok) {
+      return { success: false, error: result.message || 'Error en el registro.' };
+    }
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: 'No se pudo conectar con el servidor de registro.' };
+  }
+}
+
 // ── PARSERS / MAPEADORES ──
 const parseCategoria = (item: CategoriaApi): Categoria => ({
   cat_id: Number(item.catID ?? item.cat_id ?? 0),

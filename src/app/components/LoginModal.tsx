@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, Eye, EyeOff, ArrowRight, Loader } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router'; // 🚨 IMPORTA ESTO ARRIBA
+import { useNavigate } from 'react-router'; 
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -16,33 +16,31 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [showPass, setShowPass] = useState(false);
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
-  const navigate = useNavigate(); // 🚨 DECLARA EL NAVIGATE
-
-  
+  const navigate = useNavigate(); 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-  setError('');
-  setLoading(true);
+    setError('');
+    setLoading(true);
 
-  const result = await login(email, password);
-  setLoading(false);
+    const result = await login(email, password);
+    setLoading(false);
 
-  if (!result.success) {
-    setError(result.error ?? 'Error al iniciar sesión.');
-    return;
+    if (!result.success) {
+      setError(result.error ?? 'Error al iniciar sesión.');
+      return;
     }
 
-onClose();
-  resetForm();
+    onClose();
+    resetForm();
 
-  // 🚨 REDIRECCIÓN EN VIVO SEGÚN EL ROL DEVUELTO POR LA BD
-  if (result.role === 'admin') {
-    navigate('/admin/dashboard'); // Si es admin, lo mandamos al panel
-  } else {
-    navigate('/'); // Si es cliente, se queda en la tienda
-  }
-};
+    // Redirección según el rol devuelto por la BD
+    if (result.role === 'admin') {
+      navigate('/admin/dashboard'); 
+    } else {
+      navigate('/'); 
+    }
+  };
 
   const resetForm = () => {
     setEmail('');
@@ -214,6 +212,24 @@ onClose();
               </button>
             </form>
 
+            {/* 🛠️ ENLACE DE REGISTRO NUEVO AJUSTADO AL DISEÑO EDITORIAL */}
+            <p
+  className="text-center mt-5"
+  style={{ fontSize: '13px', color: '#4b5563', letterSpacing: '-0.01em' }} // 🛠️ Corregido a string y letterSpacing
+>
+  ¿No tienes una cuenta?{' '}
+  <button
+    type="button"
+    onClick={() => {
+      handleClose();
+      navigate('/registrar');
+    }}
+    className="font-bold hover:underline transition-all bg-transparent border-none p-0 cursor-pointer text-[#7c3aed]"
+  >
+    Regístrate aquí
+  </button>
+</p>
+
             {/* hint */}
             <p
               className="mt-6 text-center"
@@ -223,7 +239,6 @@ onClose();
               Clientes y administradores usan el mismo login.
             </p>
 
-            {/* 🛠️ Actualizado: Ya no es local, avisa que conecta a la API de Render */}
             <div
               className="mt-4 p-3 text-center"
               style={{ background: '#fafafa', border: '1px solid #e5e7eb' }}
