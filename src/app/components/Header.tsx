@@ -185,32 +185,44 @@ export function Header({ onOpenLogin }: HeaderProps) {
             </button>
           </div>
 
-          {/* desktop nav */}
-          <nav className="hidden md:flex items-center gap-7" style={{ fontSize: 12, letterSpacing: '0.09em' }}>
-            <Link to="/" className="text-gray-500 hover:text-gray-900 transition-colors uppercase tracking-widest">
-              Inicio
-            </Link>
-            <button
-              onClick={() => setIsCategoryMenuOpen((v) => !v)}
-              className="flex items-center gap-1 uppercase tracking-widest transition-colors"
-              style={{ color: isCategoryMenuOpen ? '#7c3aed' : '#6b7280' }}
-            >
-              Categorías
-              <span style={{ fontSize: 9, transform: isCategoryMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block', transition: 'transform 0.2s' }}>▾</span>
-            </button>
-            <Link to="/contacto" className="text-gray-500 hover:text-gray-900 transition-colors uppercase tracking-widest">
-              Contacto
-            </Link>
-          </nav>
+          {/* ── DESKTOP NAV OPTIMIZADO ── */}
+<nav className="hidden md:flex items-center gap-7" style={{ fontSize: 12, letterSpacing: '0.09em' }}>
+  <Link to="/" className="text-gray-500 hover:text-gray-900 transition-colors uppercase tracking-widest">
+    Inicio
+  </Link>
+  
+  {/* 🔑 NUEVO: Enlace directo al catálogo completo */}
+  <Link to="/catalogo" className="text-gray-500 hover:text-gray-900 transition-colors uppercase tracking-widest">
+    Catálogo
+  </Link>
+
+  <button
+    onClick={() => setIsCategoryMenuOpen((v) => !v)}
+    className="flex items-center gap-1 uppercase tracking-widest transition-colors"
+    style={{ color: isCategoryMenuOpen ? '#7c3aed' : '#6b7280' }}
+  >
+    Categorías
+    <span style={{ fontSize: 9, transform: isCategoryMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block', transition: 'transform 0.2s' }}>▾</span>
+  </button>
+  
+  <Link to="/contacto" className="text-gray-500 hover:text-gray-900 transition-colors uppercase tracking-widest">
+    Contacto
+  </Link>
+</nav>
 
           {/* mobile nav */}
-          {isMobileMenuOpen && (
-            <nav className="md:hidden mt-4 pb-4 flex flex-col gap-5 border-t border-gray-100 pt-4" style={{ fontSize: 13 }}>
-              <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 tracking-widest uppercase">Inicio</Link>
-              <button
-                onClick={() => { setIsCategoryMenuOpen((v) => !v); setIsMobileMenuOpen(false); }}
-                className="text-gray-700 tracking-widest uppercase text-left"
-              >
+          {/* ── MOBILE NAV OPTIMIZADO ── */}
+{isMobileMenuOpen && (
+  <nav className="md:hidden mt-4 pb-4 flex flex-col gap-5 border-t border-gray-100 pt-4" style={{ fontSize: 13 }}>
+    <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 tracking-widest uppercase">Inicio</Link>
+    
+    {/* 🔑 NUEVO EN MOBILE */}
+    <Link to="/catalogo" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 tracking-widest uppercase">Catálogo</Link>
+    
+    <button
+      onClick={() => { setIsCategoryMenuOpen((v) => !v); setIsMobileMenuOpen(false); }}
+      className="text-gray-700 tracking-widest uppercase text-left"
+    >
                 Categorías
               </button>
               <Link to="/contacto" onClick={() => setIsMobileMenuOpen(false)} className="text-gray-700 tracking-widest uppercase">Contacto</Link>
