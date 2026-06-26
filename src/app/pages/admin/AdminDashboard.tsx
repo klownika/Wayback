@@ -59,7 +59,7 @@ export function AdminDashboard() {
   // Estructura visual de las tarjetas (Mapeada dinámicamente desde el estado)
   const statCards = [
     { label: 'Productos', value: loading ? '...' : String(metrics.productosCount), sub: 'En catálogo de Supabase', icon: Package, color: '#7c3aed', bg: 'rgba(124,58,237,0.08)' },
-    { label: 'Clientes', value: loading ? '...' : String(metrics.clientesCount), sub: 'Usuarios en SQL Server', icon: Users, color: '#0ea5e9', bg: 'rgba(14,165,233,0.08)' },
+    { label: 'Clientes', value: loading ? '...' : String(metrics.clientesCount), sub: 'Usuarios en PostgreSQL', icon: Users, color: '#0ea5e9', bg: 'rgba(14,165,233,0.08)' },
     { label: 'Pedidos', value: '—', sub: 'Módulo pendiente', icon: ShoppingBag, color: '#10b981', bg: 'rgba(16,185,129,0.08)' },
     { label: 'Categorías', value: String(metrics.categoriasCount), sub: 'Segmentos activos', icon: Tag, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)' },
   ];
@@ -197,7 +197,7 @@ export function AdminDashboard() {
         <div className="space-y-4">
           {[
             {
-              label: 'Base de Datos SQL Server',
+              label: 'Base de Datos PostgreSQL',
               status: sysStatus.dbConnected
                 ? 'Conectado'
                 : 'Sin respuesta',

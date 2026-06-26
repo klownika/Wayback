@@ -50,7 +50,6 @@ export function CatalogoPage() {
       });
 
     return () => { active = false; };
-  // 🔑 CORREGIDO: Agregados filters.tallas y filters.colors para activar el ciclo de renderizado de React
   }, [filters.categorias, filters.sexo, filters.precioMin, filters.precioMax, filters.tallas, filters.colors]); 
 
   // Función de escape para limpiar filtros
@@ -67,9 +66,7 @@ export function CatalogoPage() {
     });
   };
 
-  
   const productosFiltrados = useMemo(() => {
-    // Mapa espejo id -> HEX idéntico al de tu FilterSidebar.tsx
     const MAPA_COLORS_HEX: Record<number, string> = {
       1: '#FFFFFF', // Blanco
       2: '#000000', // Negro
@@ -83,7 +80,7 @@ export function CatalogoPage() {
 
     return productos.filter((producto) => {
       
-      // 🎨 1. Filtro de Colores (Mapea el ID seleccionado al HEX de la prenda)
+      // 🎨 1. Filtro de Colores
       if (filters.colors && filters.colors.length > 0) {
         const hexSeleccionados = filters.colors.map((id: number) => MAPA_COLORS_HEX[id] || '');
         const arrayColoresPrenda = Array.isArray(producto.colors) ? producto.colors.map(String) : [];
@@ -94,7 +91,7 @@ export function CatalogoPage() {
         if (!match) return false;
       }
 
-      // 📐 2. Filtro de Tallas ULTRA-SEGURO
+      // 📐 2. Filtro de Tallas
       if (filters.tallas && filters.tallas.length > 0) {
         const tallasPrenda = Array.isArray(producto.tallas) 
           ? producto.tallas.map((t: any) => String(t).trim().toUpperCase())
@@ -106,7 +103,7 @@ export function CatalogoPage() {
         if (!match) return false;
       }
 
-      // 🛒 3. Filtro de Disponibilidad (Stock)
+      // 🛒 3. Filtro de Disponibilidad
       if (filters.soloDisponibles) {
         if (!producto.inStock) return false;
       }
@@ -116,7 +113,10 @@ export function CatalogoPage() {
   }, [productos, filters.colors, filters.tallas, filters.soloDisponibles]);
 
   return (
-    <div className="container mx-auto px-6 py-8 flex gap-8 min-h-[60vh]">
+    /* 👉 CAMBIO AQUÍ: Agregamos 'items-start'. 
+      Esto evita que la barra de filtros se estire hacia abajo acompañando al catálogo entero.
+    */
+    <div className="container mx-auto px-6 py-8 flex items-start gap-8 min-h-[60vh]">
       <FilterSidebar filters={filters} setFilters={setFilters} />
 
       <div className="flex-1">
