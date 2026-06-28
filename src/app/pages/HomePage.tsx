@@ -1,5 +1,13 @@
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router';
 import { Header } from '../components/Header'; // 🚨 REGLA ADD: Importamos el Header real
 import { ImageCarousel } from '../components/ImageCarousel';
+import { ProductCard } from '../components/ProductCard';
+import { getProductos } from '@/lib/api';
+import type { Product } from '@/lib/api';
+
+// Cuántas prendas mostrar en la selección "Para ti".
+const SELECCION_LIMIT = 8;
 
 const TICKER_ITEMS = [
   'WAYBACK · SS25', 'Prendas de archivo', 'Y2K Heritage', 'Hecho para durar',
@@ -22,6 +30,26 @@ function ProductSlot() {
 }
 
 export function HomePage() {
+  const [productos, setProductos] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Trae la selección destacada al montar. `active` evita setState tras desmontar.
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+
+    getProductos()
+      .then((res) => {
+        if (active) setProductos((res ?? []).slice(0, SELECCION_LIMIT));
+      })
+      .catch((err) => console.error('Error cargando la selección Para ti:', err))
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => { active = false; };
+  }, []);
+
   return (
     <div className="bg-white">
       
@@ -66,34 +94,57 @@ export function HomePage() {
           </h2>
         </div>
 
-        {/* Placeholder slots — ready for API */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-10">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <ProductSlot key={i} />
-          ))}
-        </div>
+        {loading ? (
+          /* Skeletons mientras carga la API */
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-10">
+            {Array.from({ length: SELECCION_LIMIT }).map((_, i) => (
+              <ProductSlot key={i} />
+            ))}
+          </div>
+        ) : productos.length > 0 ? (
+          /* Productos reales */
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-10">
+              {productos.map((prod) => (
+                <ProductCard key={prod.id} product={prod} />
+              ))}
+            </div>
 
-        {/* Coming soon note */}
-        <div
-          className="mt-14 flex flex-col items-center text-center py-12"
-          style={{ borderTop: '1px solid #f3f4f6' }}
-        >
-          <p
-            className="uppercase mb-3"
-            style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', color: '#7c3aed' }}
+            <div className="mt-14 flex justify-center" style={{ borderTop: '1px solid #f3f4f6', paddingTop: 40 }}>
+              <Link
+                to="/catalogo"
+                className="uppercase transition-colors"
+                style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', color: '#fff', background: '#7c3aed', padding: '14px 32px' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#6d28d9'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#7c3aed'; }}
+              >
+                Ver todo el catálogo
+              </Link>
+            </div>
+          </>
+        ) : (
+          /* Sin productos: nota "Próximamente" */
+          <div
+            className="flex flex-col items-center text-center py-12"
+            style={{ borderTop: '1px solid #f3f4f6' }}
           >
-            Próximamente
-          </p>
-          <p
-            style={{ fontSize: 18, fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: 8 }}
-          >
-            Catálogo en preparación
-          </p>
-          <p style={{ fontSize: 14, color: '#6b7280', maxWidth: 380, lineHeight: 1.65 }}>
-            Estamos curating las prendas perfectas para ti.<br />
-            Suscríbete abajo para ser el primero en verlas.
-          </p>
-        </div>
+            <p
+              className="uppercase mb-3"
+              style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', color: '#7c3aed' }}
+            >
+              Próximamente
+            </p>
+            <p
+              style={{ fontSize: 18, fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: 8 }}
+            >
+              Catálogo en preparación
+            </p>
+            <p style={{ fontSize: 14, color: '#6b7280', maxWidth: 380, lineHeight: 1.65 }}>
+              Estamos preparando las prendas perfectas para ti.<br />
+              Suscríbete abajo para ser el primero en verlas.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* ── Editorial divider ── */}

@@ -51,6 +51,7 @@ export function AdminProducts() {
   const [editing,  setEditing]  = useState<Product | null>(null);
   const [form,     setForm]     = useState<FormData>(EMPTY_FORM);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [variantesOf, setVariantesOf] = useState<Product | null>(null);
   const [loading,  setLoading]  = useState(true);
   const [saving,   setSaving]   = useState(false);
   const [error,    setError]    = useState<string | null>(null);
@@ -234,8 +235,21 @@ export function AdminProducts() {
                   <td className="px-5 py-3.5 font-bold" style={{ fontSize: 13, color: '#111' }}>S/ {p.price.toFixed(2)}</td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
-                      <button type="button" title="Variantes (próximamente)" className="p-1 text-gray-300 cursor-not-allowed">
+                      <button
+                        type="button"
+                        onClick={() => setVariantesOf(p)}
+                        title="Ver variantes (talla / color / stock)"
+                        className="relative p-1 text-gray-400 hover:text-[#7c3aed] transition-colors"
+                      >
                         <Eye style={{ width: 14, height: 14 }} />
+                        {(p.variantes?.length ?? 0) > 0 && (
+                          <span
+                            className="absolute -top-1 -right-1 flex items-center justify-center text-white"
+                            style={{ minWidth: 14, height: 14, padding: '0 3px', borderRadius: 7, background: '#7c3aed', fontSize: 9, fontWeight: 700, lineHeight: 1 }}
+                          >
+                            {p.variantes!.length}
+                          </span>
+                        )}
                       </button>
                       <button onClick={() => openEdit(p)} className="p-1 text-gray-400 hover:text-[#7c3aed] transition-colors" title="Editar">
                         <Edit2 style={{ width: 13, height: 13 }} />
@@ -398,6 +412,85 @@ export function AdminProducts() {
         </div>
       )}
 
+      {/* ── MODAL VARIANTES (visor talla / color / stock) ── */}
+      {variantesOf && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setVariantesOf(null)} />
+          <div className="relative z-10 bg-white w-full max-w-[520px] overflow-y-auto" style={{ maxHeight: '90vh', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #f3f4f6' }}>
+              <div>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Variantes</h3>
+                <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{variantesOf.name} · #{variantesOf.id}</p>
+              </div>
+              <button onClick={() => setVariantesOf(null)} className="text-gray-300 hover:text-gray-600">
+                <X style={{ width: 16, height: 16 }} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {(variantesOf.variantes?.length ?? 0) === 0 ? (
+                <div className="text-center py-12" style={{ border: '1px dashed #e5e7eb' }}>
+                  <p style={{ fontSize: 13, color: '#9ca3af' }}>Esta prenda no tiene variantes registradas.</p>
+                  <p style={{ fontSize: 12, color: '#d1d5db', marginTop: 4 }}>Las combinaciones de talla y color se cargan desde inventario.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Resumen de stock total */}
+                  {(() => {
+                    const vs = variantesOf.variantes!;
+                    const stockTotal = vs.reduce((acc, v) => acc + (v.varStock || 0), 0);
+                    const agotadas = vs.filter((v) => (v.varStock || 0) === 0).length;
+                    return (
+                      <div className="flex gap-6 mb-5">
+                        <Resumen label="Combinaciones" valor={String(vs.length)} />
+                        <Resumen label="Stock total" valor={String(stockTotal)} color={stockTotal === 0 ? '#ef4444' : '#7c3aed'} />
+                        <Resumen label="Agotadas" valor={String(agotadas)} color={agotadas > 0 ? '#ef4444' : '#111'} />
+                      </div>
+                    );
+                  })()}
+
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #f3f4f6', background: '#fafafa' }}>
+                        {['Talla', 'Color', 'Stock'].map((h) => (
+                          <th key={h} className="px-4 py-2.5 text-gray-400 font-bold" style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {variantesOf.variantes!.map((v) => {
+                        const sinStock = (v.varStock || 0) === 0;
+                        const hex = v.colorHex ? (v.colorHex.startsWith('#') ? v.colorHex : `#${v.colorHex}`) : '#e5e7eb';
+                        return (
+                          <tr key={v.varId} style={{ borderBottom: '1px solid #f9f9f9' }}>
+                            <td className="px-4 py-3" style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{v.varTalla || '—'}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <span style={{ width: 16, height: 16, borderRadius: '50%', background: hex, border: '1px solid #e5e7eb', flexShrink: 0 }} />
+                                <span style={{ fontSize: 13, color: '#374151' }}>{v.colorNombre || '—'}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              {sinStock ? (
+                                <span style={{ fontSize: 11, fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Agotado</span>
+                              ) : (
+                                <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{v.varStock}</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .form-input {
           width: 100%; padding: 8px 12px;
@@ -407,6 +500,15 @@ export function AdminProducts() {
         .form-input:focus { border-color: #7c3aed; background: #fff; }
         details > summary::-webkit-details-marker { display: none; }
       `}</style>
+    </div>
+  );
+}
+
+function Resumen({ label, valor, color = '#111' }: { label: string; valor: string; color?: string }) {
+  return (
+    <div>
+      <p style={{ fontSize: 22, fontWeight: 800, color, letterSpacing: '-0.02em', lineHeight: 1 }}>{valor}</p>
+      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#9ca3af', textTransform: 'uppercase', marginTop: 4 }}>{label}</p>
     </div>
   );
 }
