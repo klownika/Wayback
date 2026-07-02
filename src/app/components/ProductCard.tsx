@@ -7,9 +7,11 @@ import { CartDrawer } from '@/app/components/CartDrawer';
 export interface ProductVariante {
   varId: number;
   varTalla: string;
-  colorNombre: string;
-  colorHex: string;
+  colorNombre?: string;
+  colorId?: number | string;
+  colorHex?: string;
   varStock: number;
+  [key: string]: any; 
 }
 
 export interface Product {
@@ -31,9 +33,9 @@ export interface Product {
 
 interface ProductCardProps {
   product: Product;
+  activeFilters?: any; 
 }
 
-// Descuento vigente según rango de fechas del backend (proDescuentoInicio/Fin son ISO datetime).
 export function calcularDescuento(product: Product): { activo: boolean; precioFinal: number } {
   const { price, proDescuento, proDescuentoInicio, proDescuentoFin } = product;
   if (!proDescuento || !proDescuentoInicio || !proDescuentoFin) {
@@ -51,13 +53,70 @@ export function calcularDescuento(product: Product): { activo: boolean; precioFi
   };
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, activeFilters }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const { isFavorite, toggleFavorite } = useFavorites();
   const wishlisted = isFavorite(product.id);
   const { activo: descuentoActivo, precioFinal } = calcularDescuento(product);
+
+  // ── 🎯 DETECCIÓN MULTI-FORMATO (ID Y TEXTO) ──
+  const colorFiltradoId = activeFilters?.colors?.[0]; 
+
+  const MAPA_ID_A_NOMBRE: Record<number, string> = {
+    1: 'blanco', 2: 'negro', 3: 'azul', 4: 'verde',
+    5: 'amarillo', 6: 'rojo', 7: 'rosa', 8: 'morado',
+    9: 'marron', 10: 'azul cielo', 11: 'gris', 12: 'beige'
+  };
+  const nombreColorFiltrado = colorFiltradoId ? MAPA_ID_A_NOMBRE[Number(colorFiltradoId)] : null;
+
+// ── 🎯 PRUEBA DE CONSOLA EN VIVO ──
+  if (colorFiltradoId) {
+    console.log("-----------------------------------------");
+    console.log(`🔎 Buscando Producto: ${product.name} (ID: ${product.id})`);
+    console.log(`🎨 ID de Color seleccionado en Filtro:`, colorFiltradoId);
+    console.log(`📋 Variantes disponibles en este producto:`, product?.variantes);
+    
+    product?.variantes?.forEach((v: any, index: number) => {
+      console.log(`   👉 Variante [${index}]:`, {
+        colorId_en_BD: v.colorId || v.idColor,
+        colorNombre_en_BD: v.colorNombre,
+        imagen_en_BD: v.varImagen || v.imagen || v.imagenUrl || v.proImagen
+      });
+    });
+  }
+
+
+
+
+  // Intentamos emparejar la variante usando cualquier dato disponible
+  const varianteDelColorActivo = product?.variantes?.find((v: any) => {
+    if (!v || !colorFiltradoId) return false;
+    
+    // Prueba 1: Comprobar si coincide directamente por ID numérico (ej: v.colorId === 6)
+    if (v.colorId && String(v.colorId) === String(colorFiltradoId)) return true;
+    if (v.idColor && String(v.idColor) === String(colorFiltradoId)) return true;
+
+    // Prueba 2: Comprobar por texto normalizado (ej: "rojo" === "rojo")
+    if (v.colorNombre && nombreColorFiltrado) {
+      const nombreBase = v.colorNombre.toLowerCase().trim();
+      if (nombreBase === nombreColorFiltrado) return true;
+      if (nombreBase === `color${colorFiltradoId}`) return true; // Por si guardaste "color6"
+    }
+
+    return false;
+  });
+
+  // Recuperación dinámica de la propiedad de imagen que devuelva tu backend
+  const imagenVariante = 
+    varianteDelColorActivo?.varImagen || 
+    varianteDelColorActivo?.imagen || 
+    varianteDelColorActivo?.imagenUrl ||
+    varianteDelColorActivo?.proImagen ||
+    varianteDelColorActivo?.urlImagen;
+
+  const imagenFinal = imagenVariante || product?.image || '';
 
   return (
     <>
@@ -72,13 +131,10 @@ export function ProductCard({ product }: ProductCardProps) {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* ── Image — clic abre la vista previa, como en Ripley ── */}
         <div
           className="relative aspect-[3/4] overflow-hidden bg-gray-50"
           onClick={() => setModalOpen(true)}
         >
-
-          {/* badges */}
           {product.badge && product.inStock !== false && (
             <span className="absolute top-3 left-3 z-10 px-2.5 py-1 rounded-full text-white text-xs uppercase tracking-wide bg-[#7c3aed]">
               {product.badge}
@@ -90,16 +146,14 @@ export function ProductCard({ product }: ProductCardProps) {
             </span>
           )}
 
-          {/* main image */}
           <img
-            src={product.image}
+            src={imagenFinal}
             alt={product.name}
             className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out"
-            style={{ opacity: isHovered && product.hoverImage ? 0 : 1 }}
+            style={{ opacity: isHovered && product.hoverImage && !colorFiltradoId ? 0 : 1 }}
           />
 
-          {/* hover / alternate image — smooth fade */}
-          {product.hoverImage && (
+          {product.hoverImage && !colorFiltradoId && (
             <img
               src={product.hoverImage}
               alt=""
@@ -108,7 +162,6 @@ export function ProductCard({ product }: ProductCardProps) {
             />
           )}
 
-          {/* wishlist — visible on hover */}
           <button
             onClick={(e) => { e.stopPropagation(); toggleFavorite(product); }}
             className="absolute top-3 right-3 z-10 w-8 h-8 bg-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
@@ -124,7 +177,6 @@ export function ProductCard({ product }: ProductCardProps) {
           </button>
         </div>
 
-        {/* ── Info row: title + price + "+" ── */}
         <div className="px-3.5 pt-3 pb-3.5 flex items-center justify-between gap-2">
           <div className="min-w-0 flex-1">
             <p
@@ -151,7 +203,6 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           </div>
 
-          {/* quick-view "+" button */}
           <button
             onClick={(e) => { e.stopPropagation(); setModalOpen(true); }}
             disabled={product.inStock === false}

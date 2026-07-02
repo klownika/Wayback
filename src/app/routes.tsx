@@ -14,7 +14,7 @@ import { AdminCategories } from './pages/admin/AdminCategories';
 import { AdminEstilos } from './pages/admin/AdminEstilos';
 import { AdminClients } from './pages/admin/AdminClients'; 
 import { AdminOrders } from './pages/admin/AdminOrders';
-import { CatalogoPage } from './pages/Catalogo'; // 
+import { CatalogoPage } from './pages/Catalogo'; 
 import { DireccionesPage } from './pages/Direccionespage';
 
 export const router = createBrowserRouter([
@@ -23,8 +23,12 @@ export const router = createBrowserRouter([
     Component: RootLayout,
     children: [
       { index: true, Component: HomePage },
-      { path: 'categoria/:categoryId', Component: CategoryPage }, // 🔑 Mapea directo a tu página funcional
-      { path: 'catalogo', Component: CatalogoPage }, // Deja el catálogo limpio para "Ver todo"
+      { path: 'categoria/:categoryId', Component: CategoryPage }, 
+      
+      // 🔑 SOLUCIÓN AL 404: Agregamos la ruta física para Estilos apuntando a la misma página
+      { path: 'estilo/:estiloId', Component: CategoryPage }, 
+
+      { path: 'catalogo', Component: CatalogoPage },
       { path: 'contacto', Component: ContactoPage },
       { path: 'perfil', Component: UserProfilePage },
       { path: 'favoritos', Component: FavoritesPage },

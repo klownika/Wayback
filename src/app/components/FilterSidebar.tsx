@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
 
 interface FilterSidebarProps {
@@ -8,19 +8,14 @@ interface FilterSidebarProps {
   showCategorias?: boolean;
 }
 
+// Interfaz para la estructura que devuelve tu API
+interface ColorAPI {
+  colorId: number;
+  colorHex: string;
+}
+
 const CATEGORIAS_TIENDA = [
   'Pantalón', 'Falda', 'Shorts', 'Jogger', 'Camisetas', 'Suéteres', 'Chaquetas', 'Sets Baggy', 'Sets Denim'
-];
-
-const COLORS = [
-  { id: 1,  nombre: 'Blanco',   hex: '#FFFFFF' },
-  { id: 2,  nombre: 'Negro',    hex: '#000000' },
-  { id: 3,  nombre: 'Azul',     hex: '#0000FF' },
-  { id: 4,  nombre: 'Verde',    hex: '#008000' },
-  { id: 5,  nombre: 'Amarillo', hex: '#FFFF00' },
-  { id: 6,  nombre: 'Rojo',     hex: '#FF0000' },
-  { id: 7,  nombre: 'Rosa',     hex: '#FFC0CB' },
-  { id: 8,  nombre: 'Morado',   hex: '#800080' },
 ];
 
 const TALLAS = ['S', 'M', 'L', 'XL'];
@@ -45,12 +40,23 @@ function Divider() {
 
 export function FilterSidebar({ filters, setFilters, showCategorias = true }: FilterSidebarProps) {
   const [expanded, setExpanded] = useState({ categorias: true, genero: true, color: true, talla: true, disponibilidad: true, precio: true });
+  
+  // ── 🆕 ESTADO PARA MANEJAR LOS COLORES DESDE LA API ──
+  const [colors, setColors] = useState<ColorAPI[]>([]);
+
+  // ── 🆕 EFECTO PARA CONSUMIR TU ENDPOINT ──
+  useEffect(() => {
+    fetch('https://y2kvault-backend.onrender.com/api/colores')
+      .then((res) => res.json())
+      .then((data) => setColors(data))
+      .catch((err) => console.error("Error cargando colores:", err));
+  }, []);
+
   const toggle = (k: keyof typeof expanded) => setExpanded((p) => ({ ...p, [k]: !p[k] }));
 
   const normalizarFiltro = (str: string) => 
     str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
-  // ── 🔑 TIPADO DE PARAMETROS INTERNOS ANÓNIMOS (SOLUCIÓN AL ERROR 7006) ──
   const toggleCategoria = (c: string) => {
     const actuales: string[] = Array.isArray(filters.categorias) ? filters.categorias : [];
     const normaC = normalizarFiltro(c);
@@ -64,7 +70,6 @@ export function FilterSidebar({ filters, setFilters, showCategorias = true }: Fi
     });
   };
 
-  // Género es de selección única: elegir otro reemplaza al anterior, no se acumulan.
   const toggleSexo = (s: string) => {
     const actuales: string[] = Array.isArray(filters.sexo) ? filters.sexo : [];
     setFilters({
@@ -118,7 +123,7 @@ export function FilterSidebar({ filters, setFilters, showCategorias = true }: Fi
 
         <div className="flex flex-col" style={{ gap: 16, marginTop: 16 }}>
           
-          {/* Categorías — no aplica en CategoryPage, ya fijada por la URL */}
+          {/* Categorías */}
           {showCategorias && (
             <>
               <div>
@@ -168,16 +173,31 @@ export function FilterSidebar({ filters, setFilters, showCategorias = true }: Fi
 
           <Divider />
 
-          {/* Color */}
+          {/* Color — Adaptado a las propiedades dynamic colorId y colorHex */}
           <div>
             <SectionHeader label="Color" expanded={expanded.color} onToggle={() => toggle('color')} />
             {expanded.color && (
               <div className="grid mt-3" style={{ gridTemplateColumns: 'repeat(6, 1fr)', gap: 7 }}>
-                {COLORS.map((c) => {
+                {colors.map((c) => {
                   const actuales: number[] = Array.isArray(filters.colors) ? filters.colors : [];
-                  const active = actuales.includes(c.id);
+                  const active = actuales.includes(c.colorId);
                   return (
-                    <button type="button" key={c.id} onClick={() => toggleColor(c.id)} title={c.nombre} style={{ width: 26, height: 26, background: c.hex, border: active ? '2px solid #7c3aed' : `1px solid ${['#FFFFFF'].includes(c.hex) ? '#d1d5db' : 'transparent'}`, outline: active ? '2px solid #7c3aed' : 'none', outlineOffset: 2, transition: 'transform 0.15s', transform: active ? 'scale(1.15)' : 'scale(1)' }} className="hover:scale-110 transition-transform" />
+                    <button 
+                      type="button" 
+                      key={c.colorId} 
+                      onClick={() => toggleColor(c.colorId)} 
+                      style={{ 
+                        width: 26, 
+                        height: 26, 
+                        background: c.colorHex, 
+                        border: active ? '2px solid #7c3aed' : `1px solid ${['#FFFFFF', '#ffffff'].includes(c.colorHex) ? '#d1d5db' : 'transparent'}`, 
+                        outline: active ? '2px solid #7c3aed' : 'none', 
+                        outlineOffset: 2, 
+                        transition: 'transform 0.15s', 
+                        transform: active ? 'scale(1.15)' : 'scale(1)' 
+                      }} 
+                      className="hover:scale-110 transition-transform" 
+                    />
                   );
                 })}
               </div>

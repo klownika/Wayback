@@ -13,17 +13,21 @@ export interface Categoria {
   cat_nombre: string;
 }
 
-export interface EstiloApi {
+/* export interface EstiloApi {
   estID?: number;
   estNombre?: string;
   est_id?: number;
   est_nombre?: string;
 }
+ */
+
+
 
 export interface Estilo {
-  est_id: number;
-  est_nombre: string;
+  estId: number;     // Coincide con tu JSON "estId"
+  estNombre: string; // Coincide con tu JSON "estNombre"
 }
+
 
 // [P8 FIX] Ampliamos ClienteApi.usuario para incluir usuUsername y usuId
 export interface ClienteApi {
@@ -263,9 +267,9 @@ const parseCategoria = (item: CategoriaApi): Categoria => ({
   cat_nombre: String(item.catNombre ?? item.cat_nombre ?? ''),
 });
 
-const parseEstilo = (item: EstiloApi): Estilo => ({
-  est_id: Number(item.estID ?? item.est_id ?? 0),
-  est_nombre: String(item.estNombre ?? item.est_nombre ?? ''),
+const parseEstilo = (item: any): Estilo => ({
+  estId: Number(item.estId ?? item.est_id ?? 0),
+  estNombre: String(item.estNombre ?? item.est_nombre ?? ''),
 });
 
 const parseCliente = (item: ClienteApi): Cliente => ({
@@ -433,34 +437,30 @@ export async function getCategorias(): Promise<Categoria[]> {
   return Array.isArray(data) ? data.map(parseCategoria) : [];
 }
 
-// ── MÉTODOS DE ESTILOS ──
+// ── MÉTODOS DE ESTILOS (SOLO LECTURA / PROTEGIDOS) ──
+
 export async function getEstilos(): Promise<Estilo[]> {
   const url = `${API_BASE}/api/estilos`;
-  const data = await fetchJson<EstiloApi[]>(url);
-  return Array.isArray(data) ? data.map(parseEstilo) : [];
+  const data = await fetchJson<Estilo[]>(url); // Le decimos que viene como Estilo[] (camelCase)
+  
+  // 🟢 RETORNA EL ARREGLO DIRECTO. No uses .map(parseEstilo)
+  return Array.isArray(data) ? data : []; 
 }
 
 export async function createEstilo(estilo: { est_nombre: string }): Promise<Estilo> {
-  const url = `${API_BASE}/api/estilos`;
-  const data = await fetchJson<EstiloApi>(url, {
-    method: 'POST',
-    body: JSON.stringify({ est_nombre: estilo.est_nombre })
-  });
-  return parseEstilo(data);
+  alert("⚠️ Acción no permitida: Los estilos del sistema no se pueden modificar.");
+  // Lanzamos un error para detener el flujo del componente React y que no intente recargar la tabla de la nada
+  throw new Error("Acción no permitida");
 }
 
 export async function updateEstilo(id: number, estilo: { est_nombre: string }): Promise<Estilo> {
-  const url = `${API_BASE}/api/estilos/${id}`;
-  const data = await fetchJson<EstiloApi>(url, {
-    method: 'PUT',
-    body: JSON.stringify({ est_nombre: estilo.est_nombre })
-  });
-  return parseEstilo(data);
+  alert("⚠️ Acción no permitida: Los estilos del sistema no se pueden modificar.");
+  throw new Error("Acción no permitida");
 }
 
 export async function deleteEstilo(id: number): Promise<void> {
-  const url = `${API_BASE}/api/estilos/${id}`;
-  await fetchJson(url, { method: 'DELETE' });
+  alert("⚠️ Acción no permitida: Los estilos del sistema no se pueden modificar.");
+  throw new Error("Acción no permitida");
 }
 
 // ── MÉTODOS DE CLIENTES ──

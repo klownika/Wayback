@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router';
 import { FilterSidebar } from '../components/FilterSidebar';
 import { ProductCard } from '../components/ProductCard'; 
-import { getProductos, Product } from '@/lib/api';
-import type { ProductFilters, SortOption } from '../types/database';
+import { getProductos } from '@/lib/api';
+import type { Product } from '@/lib/api';
 
-// 🔑 DICCIONARIO TRADUCTOR: Mapea tanto texto como IDs numéricos al destino correcto
+// 🔑 DICCIONARIO TRADUCTOR EXTENDIDO: Ahora mapea tanto prendas como estilos
 const CATEGORY_MAP: Record<string, { id: string; label: string }> = {
+  // --- PRENDAS (Originales) ---
   'pantalon':     { id: '1',  label: 'Pantalón' },
   'falda':        { id: '2',  label: 'Falda' },
   'shorts':       { id: '3',  label: 'Shorts' },
@@ -18,11 +19,18 @@ const CATEGORY_MAP: Record<string, { id: string; label: string }> = {
   'sets-denim':   { id: '9',  label: 'Sets Denim' },
   'sets-depor':   { id: '10', label: 'Sets Deportivos' },
   'sets-tejidos': { id: '11', label: 'Sets Tejidos' },
-  // Soporte nativo por si la URL ya viene con el número ID directo:
-  '1':  { id: '1',  label: 'Pantalón' },
-  '2':  { id: '2',  label: 'Falda' },
-  '3':  { id: '3',  label: 'Shorts' },
-  '4':  { id: '4',  label: 'Jogger' },
+
+  // --- ESTILOS (¡Nuevos Agregados!) ---
+  'y2k-casual':   { id: '1',  label: 'Y2K Casual' },
+  'streetwear':   { id: '2',  label: 'Streetwear' },
+  'grunge':       { id: '3',  label: 'Grunge' },
+  'boho':         { id: '4',  label: 'Boho' },
+
+  // Mapeos por ID numérico (Detecta si entras por ID desde el Menú)
+  '1':  { id: '1',  label: 'Pantalón / Y2K Casual' },
+  '2':  { id: '2',  label: 'Falda / Streetwear' },
+  '3':  { id: '3',  label: 'Shorts / Grunge' },
+  '4':  { id: '4',  label: 'Jogger / Boho' },
   '5':  { id: '5',  label: 'Camisetas' },
   '6':  { id: '6',  label: 'Suéteres' },
   '7':  { id: '7',  label: 'Chaquetas' },
@@ -30,15 +38,6 @@ const CATEGORY_MAP: Record<string, { id: string; label: string }> = {
   '9':  { id: '9',  label: 'Sets Denim' },
   '10': { id: '10', label: 'Sets Deportivos' },
   '11': { id: '11', label: 'Sets Tejidos' },
-};
-
-const DEFAULT_FILTERS: ProductFilters = {
-  sexo: [],
-  colors: [],
-  tallas: [],
-  soloDisponibles: false,
-  precioMin: 0,
-  precioMax: 500,
 };
 
 function ProductSkeleton() {
@@ -54,53 +53,75 @@ function ProductSkeleton() {
 }
 
 export function CategoryPage() {
-  const { categoryId } = useParams<{ categoryId: string }>();
+  // 💡 Nota: Capturamos categoryId o estiloId dinámicamente según la ruta activa
+  const params = useParams<{ categoryId?: string; estiloId?: string }>();
+  const activeId = params.categoryId || params.estiloId;
   
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<ProductFilters>(DEFAULT_FILTERS);
-  const [sort, setSort]       = useState<SortOption>('recientes');
+  
+  const [filters, setFilters] = useState<any>({
+    sexo: [],
+    colors: [],
+    tallas: [],
+    soloDisponibles: false,
+    precioMin: 0,
+    precioMax: 500,
+  });
+  
+  const [sort, setSort] = useState<string>('recientes');
 
-  // 🛠️ Resolvemos de forma segura el texto y el ID numérico que exige el backend
-  const urlKey = categoryId ? categoryId.toLowerCase().trim() : '';
+  const urlKey = activeId ? activeId.toLowerCase().trim() : '';
   const resolvedCategory = CATEGORY_MAP[urlKey];
 
-  const label = resolvedCategory ? resolvedCategory.label : (categoryId ?? 'Categoría');
+  const label = resolvedCategory ? resolvedCategory.label : (activeId ?? 'Catálogo');
   const apiId = resolvedCategory ? resolvedCategory.id : urlKey;
 
-  // ── 🎯 LLAMADA ASÍNCRONA OPTIMIZADA CON PARÁMETROS UNIFICADOS ──
   useEffect(() => {
     if (!apiId) return;
     
     let active = true;
     setLoading(true);
 
-    // 🔥 CORRECCIÓN: Invocamos al nuevo método pasando el ID unificado como un objeto filtro
-    getProductos({ categoria: [apiId] })
+    // Mandamos los filtros correspondientes a la API
+    // Si la URL es de tipo "estilo", filtramos por estilo en el backend, si no, por categoría
+    const queryParams = window.location.pathname.includes('/estilo/')
+      ? { estilo: [apiId] }
+      : { categoria: [apiId] };
+
+    getProductos(queryParams)
       .then((data) => {
         if (active) {
-          setProducts(data);
+          setProducts(data ?? []);
         }
       })
-      .catch((err) => console.error("Error al sincronizar categoría:", err))
+      .catch((err) => console.error("Error al sincronizar catálogo:", err))
       .finally(() => {
         if (active) setLoading(false);
       });
 
     return () => { active = false; };
-  }, [apiId]); 
+  }, [apiId, window.location.pathname]); 
 
-  // Filtrado en tiempo real
   const filteredProducts = products.filter((p) => {
     if (filters.sexo && filters.sexo.length > 0 && !filters.sexo.includes(p.sexo)) return false;
-    if (filters.tallas && filters.tallas.length > 0 && !p.tallas?.some((t) => filters.tallas.includes(t))) return false;
-    if (filters.colors && filters.colors.length > 0 && !p.colors?.some((c) => filters.colors.map(String).includes(String(c)))) return false;
+    
+    if (filters.tallas && filters.tallas.length > 0) {
+      const tieneTalla = p.tallas?.some((t: string) => filters.tallas.map((x: string) => x.toUpperCase()).includes(t.toUpperCase()));
+      if (!tieneTalla) return false;
+    }
+    
+    if (filters.colors && filters.colors.length > 0) {
+      const tieneColor = p.colors?.some((c: any) => filters.colors.map(String).includes(String(c)));
+      if (!tieneColor) return false;
+    }
+    
     if (filters.soloDisponibles && !p.inStock) return false;
     if (p.price < filters.precioMin || p.price > filters.precioMax) return false;
+    
     return true;
   });
 
-  // Ordenamiento dinámico
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     if (sort === 'precio_asc') return a.price - b.price;
     if (sort === 'precio_desc') return b.price - a.price;
@@ -138,11 +159,11 @@ export function CategoryPage() {
             {/* toolbar */}
             <div className="flex items-center justify-between mb-8">
               <p style={{ fontSize: 13, color: '#9ca3af' }}>
-                {loading ? 'Buscando archivos...' : hasActiveFilters ? `Resultados filtrados (${sortedProducts.length})` : `Colección completa (${products.length})`}
+                {loading ? 'Buscando prendas...' : hasActiveFilters ? `Resultados filtrados (${sortedProducts.length})` : `Colección completa (${products.length})`}
               </p>
               <select
                 value={sort}
-                onChange={(e) => setSort(e.target.value as SortOption)}
+                onChange={(e) => setSort(e.target.value)}
                 className="bg-white border border-gray-200 text-gray-600 px-3 py-2 focus:outline-none focus:border-gray-400 transition-colors"
                 style={{ fontSize: 12, letterSpacing: '0.04em' }}
               >
@@ -158,7 +179,11 @@ export function CategoryPage() {
                 Array.from({ length: 6 }).map((_, i) => <ProductSkeleton key={i} />)
               ) : (
                 sortedProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard 
+                    key={product.id} 
+                    product={product} 
+                    activeFilters={filters} 
+                  />
                 ))
               )}
             </div>
@@ -184,7 +209,14 @@ export function CategoryPage() {
               <div className="mt-16 text-center py-12 border border-dashed border-gray-200">
                 <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 4 }}>No hay prendas que coincidan con tus filtros activos.</p>
                 <button
-                  onClick={() => setFilters(DEFAULT_FILTERS)}
+                  onClick={() => setFilters({
+                    sexo: [],
+                    colors: [],
+                    tallas: [],
+                    soloDisponibles: false,
+                    precioMin: 0,
+                    precioMax: 500,
+                  })}
                   className="mt-3 px-4 py-2 border border-gray-300 text-xs font-bold uppercase tracking-wider text-gray-600 hover:border-black hover:text-black transition-all"
                 >
                   Limpiar filtros

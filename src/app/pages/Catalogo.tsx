@@ -5,10 +5,20 @@ import { ProductCard } from '@/app/components/ProductCard';
 import { getProductos } from '@/lib/api';
 import type { Product } from '@/lib/api';
 
-// Mismos IDs que FilterSidebar — traduce el id interno al nombre que espera la API en el query string.
+// ── 🆕 MAPA COMPLETO CON LOS 12 COLORES DE TU API ──
 const MAPA_COLORS_NOMBRE: Record<number, string> = {
-  1: 'blanco', 2: 'negro', 3: 'azul', 4: 'verde',
-  5: 'amarillo', 6: 'rojo', 7: 'rosa', 8: 'morado',
+  1: 'blanco', 
+  2: 'negro', 
+  3: 'azul', 
+  4: 'verde',
+  5: 'amarillo', 
+  6: 'rojo', 
+  7: 'rosa', 
+  8: 'morado',
+  9: 'marron', 
+  10: 'azul cielo', 
+  11: 'gris', 
+  12: 'beige'
 };
 
 export function CatalogoPage() {
@@ -16,30 +26,34 @@ export function CatalogoPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Estado inicial leído una sola vez desde la URL (deep-link); de ahí en más, filters → URL.
+  // Estado inicial leído una sola vez desde la URL
   const [filters, setFilters] = useState<any>({
     categorias: searchParams.getAll('categoria'),
     sexo: searchParams.get('genero') ? [searchParams.get('genero') as string] : [],
-    colors: [],
+    colors: searchParams.getAll('color').map(Number).filter((n) => !isNaN(n)),
     tallas: searchParams.getAll('talla').map((t) => t.toUpperCase()),
     soloDisponibles: searchParams.get('stock') === 'true',
     precioMin: Number(searchParams.get('precioMin') ?? 0),
     precioMax: Number(searchParams.get('precioMax') ?? 500),
   });
 
-  // ── 🎯 Filtros = fuente de verdad. La URL y la llamada a la API se derivan de los mismos valores ──
+  // ── 🎯 Filtros = fuente de verdad ──
   useEffect(() => {
     let active = true;
     setLoading(true);
 
     const categorias: string[] = filters.categorias;
-    const coloresNombre = (filters.colors as number[]).map((id) => MAPA_COLORS_NOMBRE[id]).filter(Boolean);
+    const coloresIds: number[] = filters.colors;
+    
+    // 💡 RE-DECLARAMOS CORRECTAMENTE 'coloresNombre' PARA TU FUNCIÓN DE API
+    const coloresNombre = coloresIds.map((id) => MAPA_COLORS_NOMBRE[id]).filter(Boolean);
+    
     const tallasLower = (filters.tallas as string[]).map((t) => t.toLowerCase());
     const genero = filters.sexo.length > 0 ? filters.sexo[0] : undefined;
 
     const urlParams: [string, string][] = [];
     categorias.forEach((c) => urlParams.push(['categoria', c]));
-    coloresNombre.forEach((c) => urlParams.push(['color', c]));
+    coloresIds.forEach((id) => urlParams.push(['color', String(id)]));
     tallasLower.forEach((t) => urlParams.push(['talla', t]));
     if (genero) urlParams.push(['genero', genero]);
     if (filters.soloDisponibles) urlParams.push(['stock', 'true']);
@@ -47,10 +61,11 @@ export function CatalogoPage() {
     if (filters.precioMax !== 500) urlParams.push(['precioMax', String(filters.precioMax)]);
     setSearchParams(urlParams, { replace: true });
 
+    // Petición al backend usando los strings de texto que TypeScript requiere ('string[]')
     getProductos({
       categoria: categorias.length > 0 ? categorias : undefined,
       genero,
-      color: coloresNombre.length > 0 ? coloresNombre : undefined,
+      color: coloresNombre.length > 0 ? coloresNombre : undefined, // 👈 Aquí se usa el string ('rojo')
       talla: tallasLower.length > 0 ? tallasLower : undefined,
       stock: filters.soloDisponibles || undefined,
       precioMin: filters.precioMin,
@@ -70,7 +85,6 @@ export function CatalogoPage() {
     return () => { active = false; };
   }, [filters.categorias, filters.sexo, filters.colors, filters.tallas, filters.soloDisponibles, filters.precioMin, filters.precioMax]);
 
-  // Limpiar filtros también limpia la URL (el efecto de arriba reacciona al cambio de estado).
   const resetAll = () => {
     setFilters({
       categorias: [],
@@ -84,9 +98,6 @@ export function CatalogoPage() {
   };
 
   return (
-    /* 👉 CAMBIO AQUÍ: Agregamos 'items-start'.
-      Esto evita que la barra de filtros se estire hacia abajo acompañando al catálogo entero.
-    */
     <div className="container mx-auto px-6 py-8 flex items-start gap-8 min-h-[60vh]">
       <FilterSidebar filters={filters} setFilters={setFilters} />
 
@@ -104,7 +115,11 @@ export function CatalogoPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {productos.map((prod) => (
-              <ProductCard key={prod.id} product={prod} />
+              <ProductCard 
+                key={prod.id} 
+                product={prod} 
+                activeFilters={filters} 
+              />
             ))}
           </div>
         )}

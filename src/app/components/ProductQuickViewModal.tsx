@@ -35,13 +35,17 @@ export function ProductQuickViewModal({ product, onClose, onAdded }: ProductQuic
   const { activo: descuentoActivo, precioFinal } = calcularDescuento(fuente);
   const variantes = fuente.variantes ?? [];
 
-  // Con variantes reales tenemos colorHex/colorNombre y stock por combinación;
-  // sin ellas, caemos a los arreglos planos de colors/tallas (sin detalle de stock).
+  // Mapeamos los colores garantizando compatibilidad de tipos estricta para TypeScript
   const colores: { hex: string; nombre: string }[] = variantes.length > 0
-    ? Array.from(new Map(variantes.map((v) => [v.colorHex, v.colorNombre])).entries())
-        .map(([hex, nombre]) => ({ hex, nombre }))
+    ? variantes
+        .map((v) => ({ 
+          hex: String(v.colorHex || ''), 
+          nombre: String(v.colorNombre || '') 
+        }))
+        .filter((c, index, self) => self.findIndex((t) => t.hex === c.hex) === index)
     : (fuente.colors ?? []).map((c) => ({ hex: String(c).toUpperCase(), nombre: String(c) }));
-
+    
+  // Extraemos las tallas únicas
   const tallas: string[] = variantes.length > 0
     ? Array.from(new Set(variantes.map((v) => v.varTalla)))
     : (fuente.tallas ?? []);
