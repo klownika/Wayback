@@ -277,16 +277,32 @@ export function FilterSidebar({ filters, setFilters, showCategorias = true }: Fi
                     />
                   </div>
                 </div>
-                <input 
-                  type="range" 
-                  min={PRECIO_MIN} 
-                  max={PRECIO_MAX} 
-                  step={10} 
-                  value={filters.precioMax ?? PRECIO_MAX} 
-                  onChange={(e) => setFilters({ ...filters, precioMax: Number(e.target.value) })} 
-                  className="w-full" 
-                  style={{ accentColor: '#7c3aed' }} 
-                />
+                <div className="flex flex-col gap-3 mt-2">
+                  <div className="relative">
+                    <input 
+                      type="range" 
+                      min={PRECIO_MIN} 
+                      max={filters.precioMax ?? PRECIO_MAX} 
+                      step={10} 
+                      value={filters.precioMin ?? PRECIO_MIN} 
+                      onChange={(e) => setFilters({ ...filters, precioMin: Number(e.target.value) })} 
+                      className="w-full" 
+                      style={{ accentColor: '#7c3aed' }} 
+                    />
+                  </div>
+                  <div className="relative">
+                    <input 
+                      type="range" 
+                      min={filters.precioMin ?? PRECIO_MIN} 
+                      max={PRECIO_MAX} 
+                      step={10} 
+                      value={filters.precioMax ?? PRECIO_MAX} 
+                      onChange={(e) => setFilters({ ...filters, precioMax: Number(e.target.value) })} 
+                      className="w-full" 
+                      style={{ accentColor: '#7c3aed' }} 
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </div>

@@ -427,9 +427,12 @@ export function UserProfilePage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [direccionModal, setDireccionModal] = useState<{ mode: 'create' | 'edit'; direccion?: Direccion } | null>(null);
 
-  // ── ESTADO PARA ÓRDENES ──
+  // ── ESTADO PARA ÓRDENES Y EXPANSIÓN ──
   const [pedidos, setPedidos] = useState<PedidoHistorial[]>([]);
   const [pedidosLoading, setPedidosLoading] = useState(true);
+  
+  const [showAllDirecciones, setShowAllDirecciones] = useState(false);
+  const [showAllPedidos, setShowAllPedidos] = useState(false);
 
   useEffect(() => {
     async function fetchPedidos() {
@@ -636,7 +639,7 @@ export function UserProfilePage() {
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    {direcciones.map((dir, index) => (
+                    {(showAllDirecciones ? direcciones : direcciones.slice(0, 3)).map((dir, index) => (
                       <div
                         key={`${dir.dirId || 'new'}-${index}`}
                         className="flex items-start justify-between gap-3 p-3 rounded-xl border border-[rgba(124,58,237,0.1)] hover:bg-gray-50/50 transition-colors"
@@ -673,6 +676,14 @@ export function UserProfilePage() {
                         </div>
                       </div>
                     ))}
+                    {direcciones.length > 3 && (
+                      <button
+                        onClick={() => setShowAllDirecciones(!showAllDirecciones)}
+                        className="w-full mt-4 py-2 border border-dashed border-[#7c3aed]/30 text-[#7c3aed] text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#7c3aed]/5 transition-colors"
+                      >
+                        {showAllDirecciones ? 'Mostrar menos' : `Ver todas mis direcciones (${direcciones.length})`}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -690,7 +701,7 @@ export function UserProfilePage() {
                   </p>
                 ) : (
                   <div className="space-y-4">
-                    {pedidos.map((order) => {
+                    {(showAllPedidos ? pedidos : pedidos.slice(0, 3)).map((order) => {
                       const date = new Date(order.fechaCompra).toLocaleDateString('es-PE', {
                         day: 'numeric', month: 'short', year: 'numeric'
                       });
@@ -720,6 +731,14 @@ export function UserProfilePage() {
                         </div>
                       );
                     })}
+                    {pedidos.length > 3 && (
+                      <button
+                        onClick={() => setShowAllPedidos(!showAllPedidos)}
+                        className="w-full mt-4 py-2 border border-dashed border-[#7c3aed]/30 text-[#7c3aed] text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#7c3aed]/5 transition-colors"
+                      >
+                        {showAllPedidos ? 'Mostrar menos' : `Ver todos mis pedidos (${pedidos.length})`}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
