@@ -179,8 +179,8 @@ export function FilterSidebar({ filters, setFilters, showCategorias = true }: Fi
                   const active = actuales.includes(s);
                   return (
                     <button type="button" key={s} onClick={() => toggleSexo(s)} className="flex items-center gap-2.5 text-left transition-colors group">
-                      <span style={{ width: 14, height: 14, border: `1.5px solid ${active ? '#7c3aed' : '#d1d5db'}`, background: active ? '#7c3aed' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        {active && <svg viewBox="0 0 10 10" fill="none" style={{ width: 8, height: 8 }}><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                      <span style={{ width: 14, height: 14, borderRadius: '50%', border: `1.5px solid ${active ? '#7c3aed' : '#d1d5db'}`, background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        {active && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#7c3aed' }} />}
                       </span>
                       <span style={{ fontSize: 13, color: active ? '#7c3aed' : '#6b7280', fontWeight: active ? 600 : 400 }} className="group-hover:text-[#7c3aed] transition-colors">{s}</span>
                     </button>

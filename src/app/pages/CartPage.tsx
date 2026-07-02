@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import {
   ShoppingBag, Minus, Plus, Trash2, Truck, ShieldCheck,
