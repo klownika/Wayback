@@ -12,7 +12,9 @@ export function AdminDashboard() {
     categoriasCount: 0,
     pedidosCount: 0,
   });
-  const [recentOrders, setRecentOrders] = useState<PedidoAdmin[]>([]);
+  const [allOrders, setAllOrders] = useState<PedidoAdmin[]>([]);
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
 
   const [sysStatus, setSysStatus] = useState({
     dbConnected: false,
@@ -41,7 +43,7 @@ export function AdminDashboard() {
             categoriasCount: listaCategorias.length || 11, // Fallback a tus 11 estáticas
             pedidosCount: listaPedidos.length,
           });
-          setRecentOrders(listaPedidos.slice(0, 5));
+          setAllOrders(listaPedidos);
 
           // Si las consultas respondieron bien, el sistema está 100% operativo
           setSysStatus({
@@ -137,7 +139,7 @@ export function AdminDashboard() {
     </div>
 
     {/* Bottom Section */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       {/* Pedidos recientes */}
       <div
         className="
@@ -171,20 +173,44 @@ export function AdminDashboard() {
             <p className="text-xs text-slate-400 mt-1">Las compras realizadas aparecerán aquí</p>
           </div>
         ) : (
-          <div className="space-y-4 mt-4">
-            {recentOrders.map((order) => (
-              <div key={order.pedId} className="flex items-center justify-between p-3 border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">Pedido #{order.pedId}</p>
-                  <p className="text-xs text-slate-500">{order.cliente}</p>
+          <>
+            <div className="space-y-4 mt-4">
+              {allOrders.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE).map((order) => (
+                <div key={order.pedId} className="flex items-center justify-between p-3 border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Pedido #{order.pedId}</p>
+                    <p className="text-xs text-slate-500">{order.cliente}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-[#10b981]">S/ {order.total.toFixed(2)}</p>
+                    <p className="text-xs text-slate-400 capitalize">{order.estado}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-[#10b981]">S/ {order.total.toFixed(2)}</p>
-                  <p className="text-xs text-slate-400 capitalize">{order.estado}</p>
-                </div>
+              ))}
+            </div>
+            
+            {Math.ceil(allOrders.length / ITEMS_PER_PAGE) > 1 && (
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
+                <button 
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="text-xs font-semibold text-slate-600 hover:text-violet-600 disabled:opacity-40 disabled:hover:text-slate-600 transition-colors"
+                >
+                  Anterior
+                </button>
+                <span className="text-xs text-slate-400 font-medium">
+                  Página {page} de {Math.ceil(allOrders.length / ITEMS_PER_PAGE)}
+                </span>
+                <button 
+                  onClick={() => setPage(p => Math.min(Math.ceil(allOrders.length / ITEMS_PER_PAGE), p + 1))}
+                  disabled={page === Math.ceil(allOrders.length / ITEMS_PER_PAGE)}
+                  className="text-xs font-semibold text-slate-600 hover:text-violet-600 disabled:opacity-40 disabled:hover:text-slate-600 transition-colors"
+                >
+                  Siguiente
+                </button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
 
