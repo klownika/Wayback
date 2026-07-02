@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   useProfile, useDirecciones,
   type UpdateProfilePayload, type Direccion, type DireccionPayload
-import { useProfile, useDirecciones, type UpdateProfilePayload, type Direccion, type DireccionPayload } from '../hooks/useProfile';
+} from '../hooks/useProfile';
 import { getMisPedidos, type PedidoHistorial } from '@/lib/api';
 import { useUbigeo } from '../hooks/useUbigeo';
 import { SearchBox } from '@mapbox/search-js-react';
