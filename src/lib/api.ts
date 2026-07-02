@@ -700,6 +700,77 @@ export async function getMisPedidos(): Promise<PedidoHistorial[]> {
   }
 }
 
+export interface PedidoDetalleClienteItem {
+  varId: number;
+  nombre: string;
+  talla: string;
+  color: string;
+  cantidad: number;
+  precio: number;
+  subtotal: number;
+  imgUrl: string | null;
+}
+
+export interface PedidoDetalleCliente {
+  id: number;
+  estado: string;
+  total: number;
+  fechaCompra: string;
+  fechaEntrega: string | null;
+  metodoPago: string;
+  ultimos4: string | null;
+  direccion: string; // Combinado de dirCalle, distrito, etc.
+  items: PedidoDetalleClienteItem[];
+}
+
+function parsePedidoDetalleCliente(item: any): PedidoDetalleCliente {
+  const obj: Record<string, any> = {};
+  if (item && typeof item === 'object') {
+    Object.keys(item).forEach((key) => { obj[key.toLowerCase()] = item[key]; });
+  }
+
+  const rawItems = Array.isArray(obj['detalles']) ? obj['detalles'] : [];
+  const items: PedidoDetalleClienteItem[] = rawItems.map((v: any) => ({
+    varId: Number(v.varId ?? v.var_id ?? 0),
+    nombre: String(v.proNombre ?? v.pro_nombre ?? ''),
+    talla: String(v.varTalla ?? v.var_talla ?? ''),
+    color: String(v.colorNombre ?? v.color_nombre ?? ''),
+    cantidad: Number(v.detPedCantidad ?? v.det_ped_cantidad ?? 0),
+    precio: Number(v.detPedPrecioUnitario ?? v.det_ped_precio_unitario ?? 0),
+    subtotal: Number(v.detPedSubTotal ?? v.det_ped_sub_total ?? 0),
+    imgUrl: v.imgURL ?? v.imgUrl ?? v.img_url ?? null,
+  }));
+
+  const dirCompleta = [
+    obj['peddircalle'] ?? obj['ped_dir_calle'],
+    obj['peddirdistrito'] ?? obj['ped_dir_distrito'],
+    obj['peddirprovincia'] ?? obj['ped_dir_provincia'],
+    obj['peddirdepartamento'] ?? obj['ped_dir_departamento']
+  ].filter(Boolean).join(', ');
+
+  return {
+    id: Number(obj['pedid'] ?? obj['ped_id'] ?? 0),
+    estado: String(obj['pedestado'] ?? obj['ped_estado'] ?? 'pendiente'),
+    total: Number(obj['pedtotal'] ?? obj['ped_total'] ?? 0),
+    fechaCompra: String(obj['pedfechacompra'] ?? obj['ped_fecha_compra'] ?? ''),
+    fechaEntrega: obj['pedfechaentrega'] ?? obj['ped_fecha_entrega'] ?? null,
+    metodoPago: String(obj['pedmettipopago'] ?? obj['ped_met_tipo_pago'] ?? ''),
+    ultimos4: obj['pedmetultimos4'] ?? obj['ped_met_ultimos4'] ?? null,
+    direccion: dirCompleta,
+    items,
+  };
+}
+
+export async function getPedidoDetalleCliente(id: number): Promise<PedidoDetalleCliente | null> {
+  try {
+    const data = await fetchJson<any>(`${API_BASE}/api/mis-pedidos/${id}`);
+    return parsePedidoDetalleCliente(data);
+  } catch (error) {
+    console.error('Error al obtener el detalle del pedido del cliente:', error);
+    return null;
+  }
+}
+
 // ── ADMIN: REPORTES DE PEDIDOS (reconciliación manual de Yape) ──
 export const ESTADOS_PEDIDO = ['pendiente', 'aceptado', 'rechazado', 'cancelado', 'entregado'] as const;
 export type EstadoPedido = typeof ESTADOS_PEDIDO[number];

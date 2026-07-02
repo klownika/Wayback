@@ -10,7 +10,7 @@ import {
   useProfile, useDirecciones,
   type UpdateProfilePayload, type Direccion, type DireccionPayload
 } from '../hooks/useProfile';
-import { getMisPedidos, type PedidoHistorial } from '@/lib/api';
+import { getMisPedidos, getPedidoDetalleCliente, type PedidoHistorial, type PedidoDetalleCliente } from '@/lib/api';
 import { useUbigeo } from '../hooks/useUbigeo';
 import { SearchBox } from '@mapbox/search-js-react';
 import mapboxgl from 'mapbox-gl';
@@ -434,6 +434,26 @@ export function UserProfilePage() {
   const [showAllDirecciones, setShowAllDirecciones] = useState(false);
   const [showAllPedidos, setShowAllPedidos] = useState(false);
 
+  const [viewingOrderId, setViewingOrderId] = useState<number | null>(null);
+  const [orderDetalle, setOrderDetalle] = useState<PedidoDetalleCliente | null>(null);
+  const [detalleLoading, setDetalleLoading] = useState(false);
+
+  useEffect(() => {
+    if (viewingOrderId === null) {
+      setOrderDetalle(null);
+      return;
+    }
+    let active = true;
+    setDetalleLoading(true);
+    getPedidoDetalleCliente(viewingOrderId).then((data) => {
+      if (active) {
+        setOrderDetalle(data);
+        setDetalleLoading(false);
+      }
+    });
+    return () => { active = false; };
+  }, [viewingOrderId]);
+
   useEffect(() => {
     async function fetchPedidos() {
       try {
@@ -531,6 +551,58 @@ export function UserProfilePage() {
           onSave={handleSaveDireccion}
           onClose={() => setDireccionModal(null)}
         />
+      )}
+
+      {viewingOrderId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setViewingOrderId(null)} />
+          <div className="relative z-10 bg-white w-full overflow-y-auto" style={{ maxWidth: 500, maxHeight: '90vh', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #f3f4f6' }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Pedido #{viewingOrderId}</h3>
+              <button onClick={() => setViewingOrderId(null)} className="text-gray-300 hover:text-gray-600"><X style={{ width: 16, height: 16 }} /></button>
+            </div>
+
+            {detalleLoading || !orderDetalle ? (
+              <div className="p-10 text-center" style={{ fontSize: 13, color: '#9ca3af' }}>Cargando detalle…</div>
+            ) : (
+              <div className="p-6 flex flex-col gap-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <InfoRow label="Estado" value={orderDetalle.estado} />
+                  <InfoRow label="Fecha compra" value={orderDetalle.fechaCompra} />
+                  <InfoRow label="Fecha entrega" value={orderDetalle.fechaEntrega ?? 'No programada'} />
+                  <InfoRow label="Dirección" value={orderDetalle.direccion} />
+                  <InfoRow label="Método de Pago" value={orderDetalle.metodoPago} />
+                  <InfoRow label="Artículos" value={String(orderDetalle.items.reduce((acc, i) => acc + i.cantidad, 0))} />
+                </div>
+
+                {orderDetalle.items.length > 0 && (
+                  <div>
+                    <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8 }}>
+                      Productos
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {orderDetalle.items.map((it, i) => (
+                        <div key={i} className="flex items-center justify-between" style={{ fontSize: 12, color: '#374151' }}>
+                          <span>{it.nombre} — {it.talla} / {it.color} × {it.cantidad}</span>
+                          <span style={{ fontWeight: 700 }}>S/ {it.subtotal.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8 }}>Total</p>
+                  <p style={{ fontSize: 22, fontWeight: 800, color: '#111' }}>S/ {orderDetalle.total.toFixed(2)}</p>
+                </div>
+
+                <button onClick={() => setViewingOrderId(null)} className="py-2.5 border border-gray-200 text-gray-600 hover:border-gray-400 transition-colors" style={{ fontSize: 12 }}>
+                  Cerrar
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       <div className="min-h-screen bg-gray-50 py-8">
@@ -724,7 +796,7 @@ export function UserProfilePage() {
                                 {order.estado}
                               </p>
                             </div>
-                            <button className="text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-black transition-colors" title="El detalle de órdenes estará disponible pronto">
+                            <button onClick={() => setViewingOrderId(order.id)} className="text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-black transition-colors" title="Ver detalle del pedido">
                               Detalles
                             </button>
                           </div>
@@ -766,5 +838,14 @@ export function UserProfilePage() {
         </div>
       </div>
     </>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: '#9ca3af', textTransform: 'uppercase', marginBottom: 4 }}>{label}</p>
+      <p style={{ fontSize: 13, color: '#111' }}>{value || '—'}</p>
+    </div>
   );
 }

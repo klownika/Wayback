@@ -204,28 +204,6 @@ export function AdminOrders() {
               <div className="p-10 text-center" style={{ fontSize: 13, color: '#9ca3af' }}>Cargando detalle…</div>
             ) : (
               <div className="p-6 flex flex-col gap-5">
-                {/* Comprobante de Yape — prioritario para la reconciliación manual */}
-                <div className="rounded-lg p-4" style={{ background: 'rgba(124,58,237,0.05)', border: '1px solid rgba(124,58,237,0.15)' }}>
-                  <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: '#7c3aed', textTransform: 'uppercase', marginBottom: 10 }}>
-                    Comprobante de Yape
-                  </p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-start gap-2">
-                      <Smartphone style={{ width: 14, height: 14, color: '#7c3aed', marginTop: 2 }} />
-                      <div>
-                        <p style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', fontWeight: 700 }}>Número Yape</p>
-                        <p style={{ fontSize: 15, fontWeight: 800, color: '#111' }}>{detalle.numeroYape || '—'}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <ShieldCheck style={{ width: 14, height: 14, color: '#7c3aed', marginTop: 2 }} />
-                      <div>
-                        <p style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', fontWeight: 700 }}>Código de aprobación</p>
-                        <p style={{ fontSize: 15, fontWeight: 800, color: '#111' }}>{detalle.codigoAprobacion || '—'}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <InfoRow label="Cliente" value={detalle.cliente} />
