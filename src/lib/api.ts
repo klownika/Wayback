@@ -1,6 +1,11 @@
 // Base del backend. Configurable por entorno con VITE_API_BASE (Vercel/preview/local);
 // si no está definida, cae al backend de producción por defecto.
 export const API_BASE = import.meta.env.VITE_API_BASE ?? 'https://y2kvault-backend.onrender.com';
+console.log("======== ENV ========");
+console.log(import.meta.env);
+console.log("VITE_API_BASE =", import.meta.env.VITE_API_BASE);
+console.log("API_BASE =", API_BASE);
+console.log("=====================");
 
 // ── INTERFACES EXISTENTES ──
 export interface CategoriaApi {
