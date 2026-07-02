@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import {
   ShoppingBag, Minus, Plus, Trash2, Truck, ShieldCheck,
-  MapPin, RefreshCw, Lock, CheckCircle2, Loader2, Smartphone, Hash,
+  MapPin, RefreshCw, Lock, CheckCircle2, Loader2, Smartphone, Hash, XCircle
 } from 'lucide-react';
 import { useCart } from '@/app/hooks/useCart';
 import { useDirecciones } from '@/app/hooks/useProfile';
@@ -13,7 +13,7 @@ import { Toaster } from '@/app/components/ui/sonner';
 const YAPE_NEGOCIO_NUMERO = '987 654 321';
 const YAPE_NEGOCIO_NOMBRE = 'Wayback Store';
 
-type Paso = 'carrito' | 'yape' | 'procesando' | 'exito';
+type Paso = 'carrito' | 'yape' | 'procesando' | 'exito' | 'error';
 
 interface YapeForm {
   numero: string;
@@ -32,6 +32,7 @@ export function CartPage() {
   const [paso, setPaso]                   = useState<Paso>('carrito');
   const [yape, setYape]                   = useState<YapeForm>({ numero: '', codigo: '' });
   const [errors, setErrors]               = useState<YapeErrors>({});
+  const [errorMsg, setErrorMsg]           = useState<string>('');
 
   // ── Auto-seleccionar dirección favorita ────────────────────────────────────
   const sortedDirecciones = [...direcciones].sort((a, b) => Number(b.dirPreferido) - Number(a.dirPreferido));
@@ -85,8 +86,8 @@ export function CartPage() {
     });
 
     if (!result.success) {
-      setPaso('yape');
-      toast.error(result.error ?? 'No se pudo registrar el pedido. Intenta de nuevo.');
+      setErrorMsg(result.error ?? 'No se pudo registrar el pedido. Intenta de nuevo.');
+      setPaso('error');
       return;
     }
 
@@ -451,8 +452,8 @@ export function CartPage() {
         )}
       </div>
 
-      {/* ─── Overlay: procesando / éxito ─── */}
-      {(paso === 'procesando' || paso === 'exito') && (
+      {/* ─── Overlay: procesando / éxito / error ─── */}
+      {(paso === 'procesando' || paso === 'exito' || paso === 'error') && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl px-10 py-12 max-w-sm w-full mx-6 text-center shadow-2xl">
             {paso === 'procesando' ? (
@@ -463,7 +464,7 @@ export function CartPage() {
                 <h3 className="text-lg font-bold text-gray-800 mb-1">Registrando tu pedido…</h3>
                 <p className="text-sm text-gray-400">No cierres esta ventana.</p>
               </>
-            ) : (
+            ) : paso === 'exito' ? (
               <>
                 <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-green-100 flex items-center justify-center">
                   <CheckCircle2 className="w-9 h-9 text-green-600" />
@@ -472,6 +473,22 @@ export function CartPage() {
                 <p className="text-sm text-gray-500 leading-relaxed">
                   Verificaremos tu pago Yape y te confirmaremos a la brevedad.
                 </p>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-red-100 flex items-center justify-center">
+                  <XCircle className="w-9 h-9 text-red-600" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-800 mb-3">No se pudo procesar</h3>
+                <p className="text-sm text-gray-600 leading-relaxed mb-6">
+                  {errorMsg}
+                </p>
+                <button
+                  onClick={() => setPaso('carrito')}
+                  className="w-full py-3 bg-red-600 text-white rounded-full hover:bg-red-700 active:scale-[0.98] transition-all font-semibold text-sm"
+                >
+                  Regresar al carrito
+                </button>
               </>
             )}
           </div>

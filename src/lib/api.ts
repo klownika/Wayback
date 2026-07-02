@@ -428,7 +428,8 @@ export async function fetchJson<T>(url: string, options: RequestInit = {}): Prom
     } catch {
       // sin body legible, seguimos con el mensaje genérico
     }
-    throw new Error(`HTTP Error: ${res.status} en la ruta ${url}${detail ? ` — ${detail}` : ''}`);
+    const finalMessage = detail ? detail : `HTTP Error: ${res.status} en la ruta ${url}`;
+    throw new Error(finalMessage);
   }
   if (res.status === 204) return {} as T;
 
