@@ -120,6 +120,7 @@ export interface ProductoVariante {
   colorNombre: string;
   colorHex: string;
   varStock: number;
+  varImgUrl?: string;
 }
 
 export interface Product {
@@ -129,7 +130,8 @@ export interface Product {
   image: string;
   sexo: string;
   tallas: string[];
-  colors: (number | string)[];
+  colors: string[];
+  colorDots?: { hex: string, imgUrl?: string }[];
   inStock: boolean;
   originalPrice?: number;
   hoverImage?: string;
@@ -372,20 +374,41 @@ const parseProducto = (item: any): Product => {
         colorNombre: String(v.colorNombre ?? v.color_nombre ?? v.var_color ?? ''),
         colorHex: String(v.colorHex ?? v.color_hex ?? '').trim().toUpperCase(),
         varStock: Number(v.varStock ?? v.var_stock ?? 0),
+        varImgUrl: (v.varImgUrl || v.var_img_url || v.imgUrl || v.img_url || v.imagenurl || v.imagen_url || v.imgurl) ? String(v.varImgUrl ?? v.var_img_url ?? v.imgUrl ?? v.img_url ?? v.imagenurl ?? v.imagen_url ?? v.imgurl) : undefined,
       }));
   }
 
   let listaColores: string[] = [];
+  let listaColorDots: { hex: string, imgUrl?: string }[] = [];
   const rawColores = obj['colores'] ?? obj['pro_colores'] ?? obj['procolores'] ?? [];
 
   if (Array.isArray(rawColores)) {
-    listaColores = rawColores.map((c: any) => String(c).trim().toUpperCase());
+    // Si viene como string array (antiguo) o objeto { colorHex, imgUrl } (nuevo)
+    listaColores = rawColores.map((c: any) => typeof c === 'string' ? c.trim().toUpperCase() : String(c.colorHex ?? '').trim().toUpperCase());
+    
+    listaColorDots = rawColores.map((c: any) => {
+      if (typeof c === 'string') return { hex: c.trim().toUpperCase() };
+      return { 
+        hex: String(c.colorHex ?? '').trim().toUpperCase(), 
+        imgUrl: c.imgUrl ? String(c.imgUrl).trim().replace(/\\/g, '/') : undefined 
+      };
+    });
   } else if (Array.isArray(rawVariantes)) {
     const coloresSet = new Set<string>();
+    const dotsMap = new Map<string, string | undefined>();
     rawVariantes.forEach((v: any) => {
-      if (v && v.var_color) coloresSet.add(String(v.var_color).trim().toUpperCase());
+      const hex = String(v.colorHex ?? v.color_hex ?? v.var_color ?? '').trim().toUpperCase();
+      if (hex) {
+        coloresSet.add(hex);
+        if (!dotsMap.has(hex) && (v.varImgUrl || v.imgUrl || v.imagenurl)) {
+          dotsMap.set(hex, String(v.varImgUrl ?? v.imgUrl ?? v.imagenurl).trim().replace(/\\/g, '/'));
+        } else if (!dotsMap.has(hex)) {
+          dotsMap.set(hex, undefined);
+        }
+      }
     });
     listaColores = Array.from(coloresSet);
+    listaColorDots = listaColores.map(hex => ({ hex, imgUrl: dotsMap.get(hex) }));
   }
 
   // [P3 FIX] Unificamos finalId y safeId en una sola variable
@@ -396,6 +419,8 @@ const parseProducto = (item: any): Product => {
   const rawImagesArray = obj['imagenesurl'] ?? obj['imagenes_url'] ?? [];
   if (Array.isArray(rawImagesArray) && rawImagesArray.length > 0) {
     finalImage = String(rawImagesArray[0]).trim().replace(/\\/g, '/');
+  } else if (listaColorDots.length > 0 && listaColorDots.find(d => d.imgUrl)) {
+    finalImage = listaColorDots.find(d => d.imgUrl)!.imgUrl!;
   }
 
   return {
@@ -407,6 +432,7 @@ const parseProducto = (item: any): Product => {
     sexo: String(obj['pro_sexo'] ?? obj['sexo'] ?? 'unisex').toLowerCase(),
     tallas: listaTallas,
     colors: listaColores,
+    colorDots: listaColorDots,
     inStock: typeof obj['instock'] === 'boolean' ? obj['instock'] : true,
     categoria: obj['categoria'] ?? '',
     proDescuento: obj['prodescuento'] !== undefined ? Number(obj['prodescuento']) : undefined,
